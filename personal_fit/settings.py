@@ -30,6 +30,12 @@ if allowed_hosts_env:
 else:
     ALLOWED_HOSTS = []
 
+csrf_trusted_origins_env = os.environ.get('CSRF_TRUSTED_ORIGINS', 'http://18.230.56.7,https://18.230.56.7')
+if csrf_trusted_origins_env:
+    CSRF_TRUSTED_ORIGINS = csrf_trusted_origins_env.split(',')
+else:
+    CSRF_TRUSTED_ORIGINS = []
+
 
 # Application definition
 
