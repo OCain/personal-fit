@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card" style="max-width: 600px; margin: 0 auto;">
+    <h2>{% if object %}Editar Aluno{% else %}Cadastrar Novo Aluno{% endif %}</h2>
+    <hr style="margin: 1rem 0; border: 0; border-top: 1px solid #eee;">
+    
+    <form method="post">
+        {% csrf_token %}
+        {% for field in form %}
+            <div class="form-group">
+                <label class="form-label" for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                    <div style="color: var(--alert-error); font-size: 0.9rem; margin-top: 0.2rem;">
+                        {{ field.errors.0 }}
+                    </div>
+                {% endif %}
+            </div>
+        {% endfor %}
+        <div style="display: flex; gap: 1rem; margin-top: 2rem;">
+            <button type="submit" class="btn-primary">Salvar</button>
+            <a href="{% url 'management:dashboard' %}" class="btn-secondary">Cancelar</a>
+        </div>
+    </form>
+</div>
+
+<script>
+    // Add form-control class to all inputs
+    document.querySelectorAll('input').forEach(input => {
+        if(input.type !== 'submit' && input.type !== 'hidden' && input.type !== 'checkbox') {
+            input.classList.add('form-control');
+        }
+    });
+
+    // CPF Mask
+    const cpfInput = document.querySelector('input[name="cpf"]');
+    
+    function applyCPFMask(value) {
+        value = value.replace(/\D/g, ''); // Remove non-digits
+        if (value.length > 11) value = value.slice(0, 11); // Max 11 digits
+        
+        // Apply mask: 000.000.000-00
+        if (value.length > 9) {
+            value = value.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, "$1.$2.$3-$4");
+        } else if (value.length > 6) {
+            value = value.replace(/(\d{3})(\d{3})(\d{1,3})/, "$1.$2.$3");
+        } else if (value.length > 3) {
+            value = value.replace(/(\d{3})(\d{1,3})/, "$1.$2");
+        }
+        return value;
+    }
+
+    if (cpfInput) {
+        // Formatar valor inicial se já estiver preenchido (modo de edição)
+        if (cpfInput.value) {
+            cpfInput.value = applyCPFMask(cpfInput.value);
+        }
+
+        cpfInput.addEventListener('input', function(e) {
+            e.target.value = applyCPFMask(e.target.value);
+        });
+    }
+</script>
+{% endblock %}

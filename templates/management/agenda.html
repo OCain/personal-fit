@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="flex items-center justify-between" style="margin-bottom: 2rem;">
+    <div>
+        <h1 class="text-3xl">Agenda</h1>
+        <p class="text-muted mt-1">Seus agendamentos para {{ current_month_name }} de {{ current_year }}</p>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 2rem;">
+    <div class="card-header" style="flex-direction: row; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+        <h2 class="text-xl font-bold" style="text-transform: capitalize;">{{ current_month_name }} {{ current_year }}</h2>
+        <div class="flex gap-2">
+            <a href="?month={{ prev_month }}&year={{ prev_year }}" class="btn-secondary" style="padding: 0.5rem;" title="Mês Anterior">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+            </a>
+            <a href="?month={{ today.month }}&year={{ today.year }}" class="btn-ghost" style="padding: 0.5rem 1rem;">Hoje</a>
+            <a href="?month={{ next_month }}&year={{ next_year }}" class="btn-secondary" style="padding: 0.5rem;" title="Próximo Mês">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>
+            </a>
+        </div>
+    </div>
+    <div class="card-content" style="padding: 1.5rem;">
+        <!-- Calendar Grid -->
+        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem; text-align: center; margin-bottom: 0.5rem;">
+            <div class="text-xs font-bold text-muted">DOM</div>
+            <div class="text-xs font-bold text-muted">SEG</div>
+            <div class="text-xs font-bold text-muted">TER</div>
+            <div class="text-xs font-bold text-muted">QUA</div>
+            <div class="text-xs font-bold text-muted">QUI</div>
+            <div class="text-xs font-bold text-muted">SEX</div>
+            <div class="text-xs font-bold text-muted">SÁB</div>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: repeat(7, 1fr); gap: 0.5rem;">
+            {% for week in calendar_weeks %}
+                {% for day in week %}
+                    <div style="
+                        min-height: 80px; 
+                        padding: 0.5rem; 
+                        border: 1px solid var(--border-color); 
+                        border-radius: 8px;
+                        background-color: {% if day.is_today %}var(--primary-color){% else %}var(--card-bg){% endif %};
+                        color: {% if day.is_today %}var(--card-bg){% elif not day.is_current_month %}var(--muted){% else %}inherit{% endif %};
+                        opacity: {% if not day.is_current_month %}0.5{% else %}1{% endif %};
+                        display: flex;
+                        flex-direction: column;
+                    ">
+                        <div style="text-align: right; font-size: 0.875rem; font-weight: {% if day.is_today %}700{% else %}500{% endif %}; margin-bottom: 0.25rem;">
+                            {{ day.date.day }}
+                        </div>
+                        <div style="flex: 1; display: flex; flex-direction: column; gap: 0.2rem; overflow: hidden;">
+                            {% for schedule in day.schedules|slice:":3" %}
+                                <div style="
+                                    font-size: 0.65rem; 
+                                    background-color: {% if day.is_today %}rgba(255,255,255,0.2){% else %}var(--primary-color){% endif %};
+                                    color: {% if day.is_today %}var(--card-bg){% else %}var(--primary-foreground){% endif %};
+                                    padding: 0.1rem 0.3rem; 
+                                    border-radius: 4px; 
+                                    white-space: nowrap; 
+                                    overflow: hidden; 
+                                    text-overflow: ellipsis;
+                                " title="{{ schedule.client.user.get_full_name|default:schedule.client.user.username }} às {{ schedule.time }}">
+                                    {{ schedule.time|time:"H:i" }} {{ schedule.client.user.first_name|default:schedule.client.user.username }}
+                                </div>
+                            {% endfor %}
+                            {% if day.schedules|length > 3 %}
+                                <div style="font-size: 0.65rem; text-align: center; color: {% if day.is_today %}rgba(255,255,255,0.8){% else %}var(--muted){% endif %};">
+                                    +{{ day.schedules|length|add:"-3" }} mais
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<h2 class="text-xl mb-4" style="margin-bottom: 1rem;">Sessões de {{ current_month_name }}</h2>
+
+<div class="dash-grid">
+    {% for schedule in all_schedules %}
+        <div class="card">
+            <div class="card-content">
+                <div class="flex items-center justify-between" style="margin-bottom: 1rem;">
+                    <div class="flex items-center gap-4">
+                        <div style="background-color: var(--primary-color); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--primary-foreground);">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+                        </div>
+                        <div>
+                            <h3 class="text-md" style="margin-bottom: 0;">{{ schedule.client.user.get_full_name|default:schedule.client.user.username }}</h3>
+                            <p class="text-xs text-muted" style="margin: 0;">{{ schedule.date|date:"d/m/Y" }} às {{ schedule.time|time:"H:i" }}</p>
+                        </div>
+                    </div>
+                    <span class="badge" style="{% if schedule.status == 'C' %}background-color: var(--secondary-color); color: var(--card-bg);{% elif schedule.status == 'P' %}background-color: var(--muted); color: var(--primary-dark);{% else %}background-color: var(--alert-error); color: white;{% endif %}">
+                        {{ schedule.get_status_display }}
+                    </span>
+                </div>
+                
+                <hr style="margin: 1rem 0; border: 0; border-top: 1px solid var(--border-color);">
+                
+                <div class="flex gap-2" style="align-items: center; flex-wrap: wrap;">
+                    <a href="{% url 'management:client_detail' schedule.client.pk %}" class="btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">Ver Aluno</a>
+                    
+                    {% if schedule.status == 'P' %}
+                    <form method="post" action="{% url 'management:schedule_update_status' schedule.pk %}" style="margin: 0;">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="C">
+                        <button type="submit" class="btn-primary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; background-color: var(--secondary-color);">Confirmar</button>
+                    </form>
+                    <form method="post" action="{% url 'management:schedule_update_status' schedule.pk %}" style="margin: 0;">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="X">
+                        <button type="submit" class="btn-ghost" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; border: 1px solid var(--border-color); color: var(--alert-error);">Cancelar</button>
+                    </form>
+                    {% elif schedule.status == 'C' %}
+                    <form method="post" action="{% url 'management:schedule_update_status' schedule.pk %}" style="margin: 0;">
+                        {% csrf_token %}
+                        <input type="hidden" name="status" value="X">
+                        <button type="submit" class="btn-ghost" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; border: 1px solid var(--border-color); color: var(--alert-error);">Cancelar</button>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--muted-foreground); border: 1px dashed var(--border-color); border-radius: 12px;">
+            <p>Nenhuma sessão agendada para este mês.</p>
+        </div>
+    {% endfor %}
+</div>
+{% endblock %}

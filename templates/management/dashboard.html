@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+    <h1 class="text-3xl">Dashboard</h1>
+    <p class="text-muted mt-1">Bem-vindo ao Personal Fit Service, {{ request.user.get_full_name }}</p>
+</div>
+
+<!-- Stats Grid from Dashboard.tsx -->
+<div class="stats-grid">
+    <div class="card">
+        <div class="card-header" style="flex-direction: row; justify-content: space-between; align-items: center; padding-bottom: 0.5rem;">
+            <h3 class="text-sm font-medium">Clientes Ativos</h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--primary-color)"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        </div>
+        <div class="card-content" style="padding-top: 0;">
+            <div style="font-size: 1.5rem; font-weight: 700;">{{ clients.count }}</div>
+            <p class="text-xs text-muted" style="margin-top: 0.25rem;">Registrados no momento</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header" style="flex-direction: row; justify-content: space-between; align-items: center; padding-bottom: 0.5rem;">
+            <h3 class="text-sm font-medium">Sessões Hoje</h3>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--secondary-color)"><rect width="18" height="18" x="3" y="4" rx="2" ry="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
+        </div>
+        <div class="card-content" style="padding-top: 0;">
+            <div style="font-size: 1.5rem; font-weight: 700;">{{ sessions_today_count }}</div>
+            <p class="text-xs text-muted" style="margin-top: 0.25rem;">Agendadas para hoje</p>
+            <a href="{% url 'management:agenda' %}" class="btn-ghost" style="font-size: 0.75rem; margin-top: 0.5rem; padding: 0.2rem 0; width: auto; justify-content: flex-start; color: var(--primary-color);">Ver agenda →</a>
+        </div>
+    </div>
+</div>
+
+<div class="flex items-center justify-between" style="margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;">
+    <h2 class="text-xl">Meus Alunos</h2>
+    <a href="{% url 'management:client_create' %}" class="btn-primary">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right: 0.5rem;"><line x1="12" x2="12" y1="5" y2="19"/><line x1="5" x2="19" y1="12" y2="12"/></svg>
+        Novo Aluno
+    </a>
+</div>
+
+<div class="card" style="margin-bottom: 1.5rem; padding: 1rem;">
+    <form method="get" class="flex gap-2">
+        <input type="text" name="q" class="form-control" placeholder="Buscar aluno por nome ou CPF..." value="{{ request.GET.q }}">
+        <button type="submit" class="btn-secondary">Buscar</button>
+    </form>
+</div>
+
+<div class="dash-grid">
+    {% for client in clients %}
+    <div class="card">
+        <div class="card-content">
+            <div class="flex items-center justify-between" style="margin-bottom: 1rem;">
+                <div class="flex items-center gap-4">
+                    <div style="background-color: var(--muted); border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: var(--primary-dark);">
+                        {{ client.user.first_name|make_list|first|upper }}
+                    </div>
+                    <div>
+                        <h3 class="text-md" style="margin-bottom: 0;">{{ client.user.get_full_name|default:client.user.username }}</h3>
+                        <p class="text-xs text-muted" style="margin: 0;">{{ client.cpf_formatted }}</p>
+                    </div>
+                </div>
+                <span class="badge">Ativo</span>
+            </div>
+            
+            <hr style="margin: 1rem 0; border: 0; border-top: 1px solid var(--border-color);">
+            
+            <div class="flex items-center gap-2" style="flex-wrap: wrap;">
+                <a href="{% url 'management:client_detail' client.pk %}" class="btn-secondary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;">Ver Perfil</a>
+                <a href="{% url 'management:client_edit' client.pk %}" class="btn-ghost" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; border: 1px solid var(--border-color);">Editar</a>
+                <a href="{% url 'management:client_delete' client.pk %}" class="btn-ghost" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; border: 1px solid var(--border-color); color: var(--alert-error);">Excluir</a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div style="grid-column: 1 / -1; padding: 2rem; text-align: center; color: var(--muted-foreground); border: 1px dashed var(--border-color); border-radius: 12px;">
+        <p>Nenhum aluno encontrado ou cadastrado ainda.</p>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

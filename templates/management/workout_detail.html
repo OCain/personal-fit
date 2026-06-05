@@ -1,0 +1,450 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card" style="max-width: 800px; margin: 0 auto; margin-bottom: 2rem;">
+    
+    <!-- HEADER DA VISUALIZAÇÃO ESTÁTICA -->
+    <div id="workout-header-display" class="card-header border-b border-sidebar-border" style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: flex-start;">
+        <div>
+            <h2 class="text-xl" id="display-name">{{ workout.name }}</h2>
+            <p class="text-muted text-sm">Aluno: {{ workout.client.user.first_name }} {{ workout.client.user.last_name }}</p>
+        </div>
+        <div style="display: flex; gap: 0.5rem;">
+            <button type="button" id="btn-toggle-edit" class="btn-ghost" style="padding: 0.4rem; background: var(--primary-color); color: white;" title="Ativar Modo de Edição">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display: inline; margin-right: 0.25rem;"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                Editar Treino Completo
+            </button>
+            <form action="{% url 'management:workout_delete' workout.pk %}" method="post" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja excluir este treino?');" title="Excluir">
+                {% csrf_token %}
+                <button type="submit" class="btn-ghost" style="padding: 0.4rem; color: var(--alert-error);">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- MODO DE EDIÇÃO GLOBAL -->
+    <div id="workout-edit-container" style="display: none; margin-bottom: 2rem; padding: 1.25rem; background: var(--bg-color); border-radius: 8px; border: 1px solid var(--primary-color);">
+        <h2 class="text-xl" style="margin-bottom: 1rem; color: var(--primary-color);">Modo de Edição</h2>
+        <div class="form-group" style="margin-bottom: 1rem;">
+            <label class="form-label">Nome do Treino</label>
+            <input type="text" id="input-workout-name" class="form-control" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px;">
+        </div>
+        <div class="form-group" style="margin-bottom: 1rem;">
+            <label class="form-label">Descrição</label>
+            <textarea id="input-workout-description" class="form-control" rows="3" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px;"></textarea>
+        </div>
+    </div>
+
+    <div id="workout-description-display" style="margin-bottom: 2rem; padding: 1rem; background: var(--bg-color); border-radius: 8px; border: 1px solid var(--border-color);">
+        <p class="text-sm" style="white-space: pre-line;" id="display-description">{{ workout.description }}</p>
+    </div>
+
+    <!-- LISTA DE SESSÕES -->
+    <div class="card-content">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 class="text-lg font-bold">Sessões do Treino</h3>
+            <button type="button" id="btn-add-session" class="btn-primary" style="padding: 0.5rem 1rem; font-size: 0.85rem; display: none;">+ Adicionar Sessão</button>
+        </div>
+
+        <div id="sessions-container" style="display: flex; flex-direction: column; gap: 1rem;">
+            <!-- Sessões renderizadas pelo JS -->
+        </div>
+
+        <div id="empty-sessions" style="display: none; text-align: center; padding: 3rem 1rem; border: 1px dashed var(--border-color); border-radius: 8px;">
+            <p class="text-muted" style="margin-bottom: 1rem;">Este treino ainda não possui sessões.</p>
+        </div>
+        
+        <div id="workout-edit-actions" style="display: none; margin-top: 2rem;">
+            <div style="display: flex; gap: 1rem; padding-top: 1rem; border-top: 1px solid var(--border-color);">
+                <button type="button" id="btn-save-all" class="btn-primary w-full" style="font-weight: bold;">💾 Salvar</button>
+                <button type="button" id="btn-cancel-edit" class="btn-secondary w-full" style="background-color: var(--alert-error); border-color: var(--alert-error); color: white;">Descartar</button>
+            </div>
+            <div id="save-spinner" style="display: none; text-align: center; margin-top: 1rem; color: var(--primary-color);">Salvando dados... aguarde.</div>
+        </div>
+
+        <div style="margin-top: 2rem; text-align: center;" id="back-button-container">
+            <a href="{% url 'management:client_detail' workout.client.pk %}" class="btn-secondary" style="display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem; padding: 0.5rem 1.5rem; text-decoration: none; border: 1px solid var(--border-color); border-radius: 6px; font-weight: 500; color: var(--foreground); background: var(--bg-color); transition: all 0.2s;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+                Voltar
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL DE SESSÃO -->
+<dialog id="session-modal" class="card" style="width: 95%; max-width: 650px; padding: 2rem; border: 1px solid var(--border-color); border-radius: 8px; box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+    <h3 class="text-xl" style="margin-bottom: 1rem; color: var(--primary-color);" id="modal-title">Configurar Sessão</h3>
+    
+    <div class="form-group" style="margin-bottom: 1rem;">
+        <label class="form-label">Nome da Sessão (Ex: Treino A, Costas)</label>
+        <input type="text" id="modal-session-name" class="form-control" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 4px;">
+    </div>
+    
+    <div class="form-group" style="margin-bottom: 1.5rem;">
+        <label class="form-label">Dias da Semana</label>
+        <div id="modal-session-days" style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+            <!-- Checkboxes de dias injetados via JS -->
+        </div>
+    </div>
+    
+    <h4 class="font-bold" style="margin-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Exercícios</h4>
+    <div id="modal-exercises-list" style="display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1rem; max-height: 40vh; overflow-y: auto; padding-right: 0.5rem;">
+        <!-- Lista de exercícios via JS -->
+    </div>
+    
+    <button type="button" id="modal-btn-add-exercise" class="btn-ghost" style="width: 100%; border: 2px dashed var(--border-color); margin-bottom: 2rem; padding: 0.5rem;">+ Adicionar Exercício</button>
+    
+    <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+        <button type="button" id="modal-btn-cancel" class="btn-secondary">Cancelar</button>
+        <button type="button" id="modal-btn-save" class="btn-primary">OK</button>
+    </div>
+</dialog>
+
+<!-- TEMPLATES JS (Usados pelo renderizador) -->
+<script>
+    // Dados injetados pela View
+    const originalState = {{ workout_json|safe }};
+    const exercisesCatalog = {{ exercises_catalog_json|safe }};
+    const daysOfWeek = {{ days_of_week_json|safe }};
+    
+    // Estado Mutável em Memória (Rascunho)
+    let state = JSON.parse(JSON.stringify(originalState));
+    let isEditMode = false;
+    let editingSessionIndex = null; // null = criando nova sessão
+
+    // Elementos DOM Principais
+    const containerDisplayHeader = document.getElementById('workout-header-display');
+    const containerEditHeader = document.getElementById('workout-edit-container');
+    const containerDescription = document.getElementById('workout-description-display');
+    const sessionsContainer = document.getElementById('sessions-container');
+    const emptySessionsMsg = document.getElementById('empty-sessions');
+    const btnAddSession = document.getElementById('btn-add-session');
+    
+    // Inputs Principais
+    const inputWorkoutName = document.getElementById('input-workout-name');
+    const inputWorkoutDesc = document.getElementById('input-workout-description');
+    
+    // Modal Elementos
+    const modal = document.getElementById('session-modal');
+    const modalExercisesList = document.getElementById('modal-exercises-list');
+    
+    // Utilitários
+    function generateUUID() {
+        return Math.random().toString(36).substring(2) + Date.now().toString(36);
+    }
+    
+    function init() {
+        // Inicializa inputs de modo edição
+        inputWorkoutName.value = state.name;
+        inputWorkoutDesc.value = state.description;
+        
+        // Renderiza lista
+        renderSessionsList();
+        
+        // Listener: Alternar Modo Edição
+        document.getElementById('btn-toggle-edit').addEventListener('click', () => {
+            isEditMode = true;
+            updateUIMode();
+            renderSessionsList(); // Re-renderiza para mostrar botões de edição nas sessões
+        });
+        
+        // Listener: Descartar Rascunho (Cancelar)
+        document.getElementById('btn-cancel-edit').addEventListener('click', () => {
+            if(confirm("Tem certeza? Todas as alterações não salvas serão perdidas.")){
+                state = JSON.parse(JSON.stringify(originalState)); // Reseta estado
+                inputWorkoutName.value = state.name;
+                inputWorkoutDesc.value = state.description;
+                isEditMode = false;
+                updateUIMode();
+                renderSessionsList();
+            }
+        });
+
+        // Listener: Adicionar Sessão
+        btnAddSession.addEventListener('click', () => {
+            openSessionModal(null);
+        });
+
+        // Listener: Fechar Modal
+        document.getElementById('modal-btn-cancel').addEventListener('click', () => {
+            modal.close();
+        });
+
+        // Listener: Salvar Modal
+        document.getElementById('modal-btn-save').addEventListener('click', saveModalToState);
+
+        // Listener: Salvar Tudo para API
+        document.getElementById('btn-save-all').addEventListener('click', submitWorkoutToAPI);
+        
+        // Prepara os Checkboxes do Modal de Dias
+        const daysContainer = document.getElementById('modal-session-days');
+        daysOfWeek.forEach(day => {
+            daysContainer.innerHTML += `
+                <label style="display: flex; align-items: center; gap: 0.25rem; font-size: 0.85rem; padding: 0.25rem 0.5rem; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 4px; cursor: pointer;">
+                    <input type="checkbox" name="session-day" value="${day.id}"> ${day.name.substring(0,3)}
+                </label>
+            `;
+        });
+        
+        // Add listener para adicionar exercicio no modal
+        document.getElementById('modal-btn-add-exercise').addEventListener('click', () => {
+            addExerciseRowToModal({});
+        });
+    }
+
+    function updateUIMode() {
+        if (isEditMode) {
+            containerDisplayHeader.style.display = 'none';
+            containerDescription.style.display = 'none';
+            containerEditHeader.style.display = 'block';
+            btnAddSession.style.display = 'inline-block';
+            document.getElementById('back-button-container').style.display = 'none';
+            document.getElementById('workout-edit-actions').style.display = 'block';
+        } else {
+            containerDisplayHeader.style.display = 'flex';
+            containerDescription.style.display = 'block';
+            containerEditHeader.style.display = 'none';
+            btnAddSession.style.display = 'none';
+            document.getElementById('back-button-container').style.display = 'block';
+            document.getElementById('workout-edit-actions').style.display = 'none';
+        }
+    }
+
+    function getDayName(id) {
+        const d = daysOfWeek.find(x => x.id == id);
+        return d ? d.name : '';
+    }
+
+    function renderSessionsList() {
+        sessionsContainer.innerHTML = '';
+        let visibleCount = 0;
+
+        state.sessions.forEach((session, index) => {
+            if (session._deleted) return;
+            visibleCount++;
+
+            let exercisesHtml = '';
+            if (session.exercises && session.exercises.filter(e => !e._deleted).length > 0) {
+                exercisesHtml = `
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.85rem; margin-top: 1rem;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid var(--border-color);">
+                                <th style="text-align: left; padding-bottom: 0.5rem; color: var(--muted-foreground);">Exercício</th>
+                                <th style="text-align: center; padding-bottom: 0.5rem; color: var(--muted-foreground);">Séries/Reps</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${session.exercises.filter(e => !e._deleted).map(e => `
+                                <tr style="border-bottom: 1px solid var(--border-color);">
+                                    <td style="padding: 0.5rem 0;">${e.exercise_name || getExerciseName(e.exercise_id)} <br><span style="font-size: 0.75rem; color: var(--muted-foreground);">${e.notes || ''}</span></td>
+                                    <td style="text-align: center; padding: 0.5rem 0;">${e.sets} x ${e.reps}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } else {
+                exercisesHtml = `<p class="text-muted text-sm" style="text-align: center; padding: 1rem 0;">Nenhum exercício.</p>`;
+            }
+
+            let actionButtons = '';
+            if (isEditMode) {
+                actionButtons = `
+                    <div style="display: flex; gap: 0.5rem;">
+                        <button type="button" class="btn-ghost" style="padding: 0.4rem;" onclick="openSessionModal(${index})" title="Editar Sessão">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                        </button>
+                        <button type="button" class="btn-ghost" style="padding: 0.4rem; color: var(--alert-error);" onclick="markSessionDeleted(${index})" title="Excluir Sessão">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                        </button>
+                    </div>
+                `;
+            }
+
+            const daysDisplay = (session.days_of_week || []).map(getDayName).join(', ');
+
+            sessionsContainer.innerHTML += `
+                <div style="border: 1px solid var(--border-color); border-radius: 8px; background: var(--card-bg);">
+                    <div style="padding: 1rem; border-bottom: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center; background: var(--bg-color); border-radius: 8px 8px 0 0;">
+                        <div>
+                            <h4 class="font-bold">${session.name}</h4>
+                            <span class="text-xs text-muted">${daysDisplay}</span>
+                        </div>
+                        ${actionButtons}
+                    </div>
+                    <div style="padding: 0 1rem 1rem 1rem;">
+                        ${exercisesHtml}
+                    </div>
+                </div>
+            `;
+        });
+
+        if (visibleCount === 0) {
+            emptySessionsMsg.style.display = 'block';
+        } else {
+            emptySessionsMsg.style.display = 'none';
+        }
+    }
+
+    function getExerciseName(id) {
+        const ex = exercisesCatalog.find(x => x.id == id);
+        return ex ? ex.name : '';
+    }
+
+    window.markSessionDeleted = function(index) {
+        if(confirm("Remover esta sessão do rascunho? (Será apagada definitivamente ao Salvar)")) {
+            state.sessions[index]._deleted = true;
+            renderSessionsList();
+        }
+    }
+
+    // LÓGICA DO MODAL
+    function openSessionModal(index) {
+        editingSessionIndex = index;
+        const s = index !== null ? state.sessions[index] : { name: '', days_of_week: [], exercises: [] };
+        
+        document.getElementById('modal-title').innerText = index !== null ? "Editar Sessão" : "Nova Sessão";
+        document.getElementById('modal-session-name').value = s.name;
+        
+        // Reset Checkboxes
+        document.querySelectorAll('input[name="session-day"]').forEach(cb => {
+            cb.checked = s.days_of_week.includes(parseInt(cb.value));
+        });
+        
+        // Reset Exercises
+        modalExercisesList.innerHTML = '';
+        if(s.exercises) {
+            s.exercises.forEach(ex => {
+                if(!ex._deleted) addExerciseRowToModal(ex);
+            });
+        }
+        
+        modal.showModal();
+    }
+
+    function addExerciseRowToModal(exData) {
+        const rowId = 'ex-row-' + generateUUID();
+        const catalogOptions = exercisesCatalog.map(c => `<option value="${c.id}" ${c.id == exData.exercise_id ? 'selected' : ''}>${c.name} (${c.muscle_group})</option>`).join('');
+        
+        const html = `
+            <div id="${rowId}" class="exercise-row" data-id="${exData.id || ''}" style="background: var(--bg-color); padding: 1rem; border-radius: 6px; border: 1px solid var(--border-color); position: relative;">
+                <button type="button" onclick="document.getElementById('${rowId}').remove()" class="btn-ghost" style="position: absolute; top: 0.5rem; right: 0.5rem; padding: 0.2rem; color: var(--alert-error);" title="Remover Exercício">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg>
+                </button>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                    <div style="grid-column: span 2;">
+                        <label class="text-xs text-muted">Exercício</label>
+                        <select class="form-control ex-id" style="width: 100%; padding: 0.4rem; border: 1px solid var(--border-color); border-radius: 4px;">
+                            <option value="">Selecione...</option>
+                            ${catalogOptions}
+                        </select>
+                    </div>
+                    <div>
+                        <label class="text-xs text-muted">Séries</label>
+                        <input type="number" class="form-control ex-sets" value="${exData.sets || 3}" style="width: 100%; padding: 0.4rem; border: 1px solid var(--border-color); border-radius: 4px;">
+                    </div>
+                    <div>
+                        <label class="text-xs text-muted">Repetições</label>
+                        <input type="text" class="form-control ex-reps" value="${exData.reps || '10-12'}" style="width: 100%; padding: 0.4rem; border: 1px solid var(--border-color); border-radius: 4px;">
+                    </div>
+                    <div style="grid-column: span 2;">
+                        <label class="text-xs text-muted">Observações</label>
+                        <input type="text" class="form-control ex-notes" value="${exData.notes || ''}" style="width: 100%; padding: 0.4rem; border: 1px solid var(--border-color); border-radius: 4px;">
+                    </div>
+                </div>
+            </div>
+        `;
+        modalExercisesList.insertAdjacentHTML('beforeend', html);
+    }
+
+    function saveModalToState() {
+        const name = document.getElementById('modal-session-name').value;
+        if(!name.trim()) { alert("Digite um nome para a sessão."); return; }
+        
+        const days = Array.from(document.querySelectorAll('input[name="session-day"]:checked')).map(cb => parseInt(cb.value));
+        
+        const exercises = [];
+        document.querySelectorAll('.exercise-row').forEach(row => {
+            const exId = row.querySelector('.ex-id').value;
+            if(!exId) return; // Ignora rows sem ex selecionado
+            
+            exercises.push({
+                id: row.dataset.id ? parseInt(row.dataset.id) : null,
+                exercise_id: parseInt(exId),
+                exercise_name: getExerciseName(exId),
+                sets: row.querySelector('.ex-sets').value,
+                reps: row.querySelector('.ex-reps').value,
+                notes: row.querySelector('.ex-notes').value,
+                _deleted: false
+            });
+        });
+        
+        // Se estava editando, preserva os exercícios marcados como _deleted para que a API saiba apagar do DB
+        if (editingSessionIndex !== null) {
+            const oldExercises = state.sessions[editingSessionIndex].exercises || [];
+            oldExercises.forEach(oldEx => {
+                // Se era um exercicio do DB que não está na nova lista, marca como deleted
+                if (oldEx.id && !exercises.find(e => e.id === oldEx.id)) {
+                    exercises.push({ ...oldEx, _deleted: true });
+                }
+            });
+            
+            state.sessions[editingSessionIndex].name = name;
+            state.sessions[editingSessionIndex].days_of_week = days;
+            state.sessions[editingSessionIndex].exercises = exercises;
+        } else {
+            state.sessions.push({
+                id: null,
+                name: name,
+                days_of_week: days,
+                exercises: exercises,
+                _deleted: false
+            });
+        }
+        
+        modal.close();
+        renderSessionsList();
+    }
+
+    // SUBMIT FINAL
+    function submitWorkoutToAPI() {
+        state.name = inputWorkoutName.value;
+        state.description = inputWorkoutDesc.value;
+        
+        if(!state.name.trim()) { alert("O nome do treino é obrigatório."); return; }
+        
+        const btnSave = document.getElementById('btn-save-all');
+        const spinner = document.getElementById('save-spinner');
+        btnSave.disabled = true;
+        spinner.style.display = 'block';
+        
+        fetch("{% url 'management:workout_save_api' workout.pk %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify(state)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if(data.status === 'success') {
+                window.location.reload(); // Recarrega para voltar ao modo display com dados frescos
+            } else {
+                alert("Erro ao salvar: " + data.message);
+                btnSave.disabled = false;
+                spinner.style.display = 'none';
+            }
+        })
+        .catch(err => {
+            alert("Erro de conexão ao salvar.");
+            btnSave.disabled = false;
+            spinner.style.display = 'none';
+        });
+    }
+
+    // Run
+    init();
+</script>
+{% endblock %}

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personal Fit Service</title>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Open+Sans:wght@300;400;600;700&display=swap" rel="stylesheet">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'index.css' %}">
+</head>
+<body class="login-screen-bg">
+    <div class="login-card">
+        <div class="card-header items-center" style="text-align: center; margin-bottom: 1.5rem;">
+            <div class="flex justify-center">
+                <div class="icon-circle">
+                    <!-- Dumbbell SVG Icon from Lucide -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-dumbbell"><path d="M14.4 14.4 9.6 9.6"/><path d="M18.657 21.485a2 2 0 1 1-2.829-2.828l-1.767 1.768a2 2 0 1 1-2.829-2.829l6.364-6.364a2 2 0 1 1 2.829 2.829l-1.768 1.767a2 2 0 1 1 2.828 2.829z"/><path d="m21.5 21.5-1.4-1.4"/><path d="M3.9 3.9 2.5 2.5"/><path d="M6.404 2.757a2 2 0 1 0-2.829 2.828l1.768-1.767a2 2 0 1 0 2.829 2.828L1.808 12.914a2 2 0 1 0-2.828-2.829l1.767-1.767a2 2 0 1 0 2.829-2.828z"/></svg>
+                </div>
+            </div>
+            <h1 class="card-title text-3xl">Personal Fit Service</h1>
+            <p class="card-description mt-2">Sistema de gestão para Personal Trainers</p>
+        </div>
+        
+        <form method="post" action="{% url 'login' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <label class="form-label" for="id_username">Usuário</label>
+                <input type="text" name="username" class="form-control" id="id_username" placeholder="Seu nome de usuário" required>
+            </div>
+            <div class="form-group">
+                <label class="form-label" for="id_password">Senha</label>
+                <input type="password" name="password" class="form-control" id="id_password" placeholder="••••••••" required>
+            </div>
+            
+            {% if form.errors %}
+                <div class="alert alert-error" style="text-align: center; font-size: 0.8rem;">
+                    Usuário ou senha incorretos. Tente novamente.
+                </div>
+            {% endif %}
+
+            <button type="submit" class="btn-primary w-full" style="margin-top: 1rem;">Entrar</button>
+            
+            <div class="flex justify-center" style="margin-top: 1.5rem;">
+                <button type="button" class="text-muted" style="background: none; border: none; padding: 0;">Esqueceu sua senha?</button>
+            </div>
+        </form>
+    </div>
+</body>
+</html>

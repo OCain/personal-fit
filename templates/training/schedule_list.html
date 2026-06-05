@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="header-action" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+    <h2>Minha Agenda</h2>
+    <a href="{% url 'training:schedule_create' %}" class="btn-primary">+ Novo Agendamento</a>
+</div>
+
+<div class="card">
+    <table style="width: 100%; border-collapse: collapse; text-align: left;">
+        <thead>
+            <tr style="border-bottom: 2px solid #eee;">
+                <th style="padding: 1rem;">Data</th>
+                <th style="padding: 1rem;">Horário</th>
+                <th style="padding: 1rem;">Personal</th>
+                <th style="padding: 1rem;">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for schedule in schedules %}
+            <tr style="border-bottom: 1px solid #eee;">
+                <td style="padding: 1rem;">{{ schedule.date|date:"d/m/Y" }}</td>
+                <td style="padding: 1rem;">{{ schedule.time|time:"H:i" }}</td>
+                <td style="padding: 1rem;">{{ schedule.personal.get_full_name }}</td>
+                <td style="padding: 1rem;">
+                    {% if schedule.status == 'P' %}
+                        <span style="background: #f1c40f; color: white; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">Pendente</span>
+                    {% elif schedule.status == 'C' %}
+                        <span style="background: var(--alert-success); color: white; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">Confirmado</span>
+                    {% else %}
+                        <span style="background: var(--alert-error); color: white; padding: 0.2rem 0.5rem; border-radius: 4px; font-size: 0.8rem; font-weight: bold;">Cancelado</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="4" style="padding: 1rem; text-align: center;">Nenhum agendamento encontrado.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

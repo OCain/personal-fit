@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div style="margin-bottom: 2rem;">
+    <h1 class="text-3xl">Meu Treino</h1>
+    <p class="text-muted mt-1">Acompanhe suas sessões e orientações de treino abaixo.</p>
+</div>
+
+<div class="dash-grid">
+    {% for workout in workouts %}
+        <div style="grid-column: 1 / -1; margin-bottom: 1rem;">
+            <h2 class="text-2xl" style="color: var(--primary-color);">{{ workout.name }}</h2>
+            <p class="text-sm text-muted">{{ workout.description }}</p>
+        </div>
+        
+        {% for session in workout.sessions.all %}
+        <div class="card">
+            <div class="card-header border-b border-sidebar-border" style="border-bottom: 1px solid var(--border-color); padding-bottom: 1rem; background: var(--bg-color); border-radius: 8px 8px 0 0;">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold">{{ session.name }}</h3>
+                    <span style="font-size: 0.9rem; color: var(--muted-foreground); font-weight: 500;">{{ session.days_display }}</span>
+                </div>
+            </div>
+            
+            <div class="card-content">
+                <ul style="list-style: none; padding: 0; margin-top: 1rem;">
+                    {% for exercise in session.exercises.all %}
+                        <li class="flex items-center justify-between" style="background: var(--bg-color); padding: 1rem; border-radius: 8px; margin-bottom: 0.75rem; border: 1px solid var(--border-color);">
+                            <div>
+                                <strong class="text-md" style="display: block;">{{ exercise.exercise.name }}</strong>
+                                <span class="text-xs text-muted" style="display: block; margin-top: 0.1rem;">
+                                    {{ exercise.exercise.muscle_group }} {% if exercise.notes %}| {{ exercise.notes }}{% endif %}
+                                </span>
+                                <span style="display: inline-block; margin-top: 0.5rem; font-size: 0.95rem; font-weight: 600; color: var(--primary-color);">{{ exercise.sets }} x {{ exercise.reps }}</span>
+                            </div>
+
+                        </li>
+                    {% empty %}
+                        <p class="text-muted text-sm text-center py-4">Nenhum exercício cadastrado para esta sessão.</p>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% empty %}
+        <div class="card w-full" style="grid-column: 1 / -1;">
+            <div class="card-content text-center" style="padding: 3rem;">
+                <p class="text-muted font-medium">Nenhuma sessão encontrada para este treino.</p>
+            </div>
+        </div>
+        {% endfor %}
+    {% empty %}
+    <div class="card w-full" style="grid-column: 1 / -1;">
+        <div class="card-content text-center" style="padding: 3rem;">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" class="text-muted" style="margin: 0 auto 1rem auto; opacity: 0.5;"><path d="M14.4 14.4 9.6 9.6"/><path d="M18.657 21.485a2 2 0 1 1-2.829-2.828l-1.767 1.768a2 2 0 1 1-2.829-2.829l6.364-6.364a2 2 0 1 1 2.829 2.829l-1.768 1.767a2 2 0 1 1 2.828 2.829z"/><path d="m21.5 21.5-1.4-1.4"/><path d="M3.9 3.9 2.5 2.5"/><path d="M6.404 2.757a2 2 0 1 0-2.829 2.828l1.768-1.767a2 2 0 1 0 2.829 2.828L1.808 12.914a2 2 0 1 0-2.828-2.829l1.767-1.767a2 2 0 1 0 2.829-2.828z"/></svg>
+            <p class="text-muted font-medium">Você ainda não possui treinos designados pelo seu Personal Trainer.</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
